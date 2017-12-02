@@ -1,3 +1,5 @@
+### Use R to rename variables
+
 Train <- read.csv("train.csv")
 
 library(plyr)
@@ -9,6 +11,7 @@ names(Train)
 write.csv(Train,"TrainR.csv")
 
 
+### Use SAS to load the data and then convert LotFront to Numeric
 
 /*View first 20 observations of Train dataset to ensure loaded properly*/
 /*An extra column called VAR1 was added by R. It will be removed later*/
