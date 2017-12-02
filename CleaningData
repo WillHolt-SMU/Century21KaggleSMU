@@ -1,0 +1,30 @@
+Train <- read.csv("train.csv")
+
+library(plyr)
+Train <- rename(Train, c("X1stFlrSF"="FirstFlrSF", "X2ndFlrSF"="SecondFlrSF","X3SsnPorch"="ThreeSsnPorch"))
+
+##Check names to make sure they were changed
+names(Train)
+
+write.csv(Train,"TrainR.csv")
+
+
+
+/*View first 20 observations of Train dataset to ensure loaded properly*/
+/*An extra column called VAR1 was added by R. It will be removed later*/
+proc print data=TrainR (firstobs=1 obs=20);
+run;
+
+/*Convert LotFrontage from character to numerical and rename to LotFrontage*/
+/*Dropping VAR1, which was added by R*/
+data Train;
+set TrainR;
+   LotFrontageNum = input(LotFrontage, 8.);
+   drop LotFrontage;
+   rename LotFrontageNum=LotFrontage;
+   drop VAR1;
+run;
+
+/*Check LotFrontage to ensure stored as numeric. Will appear to far right*/
+proc contents data=Train;
+run;
