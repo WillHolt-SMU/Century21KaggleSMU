@@ -1,0 +1,298 @@
+/*Variables removed OverallCond
+BsmtFinSF2
+BsmtFullBath
+FullBath	
+HalfBath
+Fireplaces
+WoodDeckSF
+EnclosedPorch
+ThirdSsnPorch
+PoolArea
+MiscVal
+MoSold
+YrSold
+GarageYrBlt
+MSSubClass
+YearRemodAdd 
+MasVnrArea
+BsmtFinSF1 
+BsmtUnfSF 
+SecondFlrSF 
+LowQualFinSF 
+BsmtHalfBath 
+BedroomAbvGr 
+KitchenAbvGr 
+GarageArea 
+ScreenPorch */
+
+
+
+/*We need to add a sales column to the test set*/
+data test;
+set test;
+SalePrice = .;
+run;
+
+/*An extra column called VAR1 was added by R. It will be removed later*/
+/*Convert LotFrontage from character to numerical and rename to LotFrontage*/
+/*Dropping VAR1, which was added by R*/
+/*This also combines test and train together*/
+data Train;
+set TrainR;
+LotFrontageNum = input(LotFrontage, 8.);
+drop LotFrontage;
+rename LotFrontageNum=LotFrontage;
+drop VAR1;
+run;
+
+/*Load the data cleaned by R first. TrainR
+/*We want to remove extreme values from the original data set*/
+data train;
+set train;
+if BSMTFinSF1 > 5600 then delete;
+if GrLivArea > 4000 then delete;
+if OpenPorchSF > 300 then delete;
+if TotalBsmtSF > 6000 then delete;
+run;
+
+
+
+/*Check LotFrontage to ensure stored as numeric. Will appear to far right*/
+proc contents data=Train;
+run;
+
+
+/*We want to log certain variables based on assumptions*/
+data train;
+set train;
+logsaleprice = log(saleprice);
+logBSMTFinSF1 = log(BSMTFinSF1);
+logTotalBSMTSF = log(TotalBSMTSF);
+logGrLivArea = log(GrLivArea);
+logLotArea = log(LotArea);
+run;
+
+/*There was a discrepancy in the variable name, so we had to change it*/
+data train;
+set train;
+rename ThreeSsnPorch = ThirdSsnPorch;
+run;
+
+
+/*Set LotFrontage as numeric in test*/
+data test;
+set test;
+LotFrontageNum = input(LotFrontage, 8.);
+drop LotFrontage;
+rename LotFrontageNum=LotFrontage;
+run;
+
+data test;
+set test;
+logsaleprice = log(saleprice);
+logBSMTFinSF1 = log(BSMTFinSF1);
+logTotalBSMTSF = log(TotalBSMTSF);
+logGrLivArea = log(GrLivArea);
+logLotArea = log(LotArea);
+run;
+
+data test;
+set test;
+rename ThreeSsnPorch = ThirdSsnPorch;
+run;
+
+
+data train2;
+set train test;
+run;
+
+proc print data=train2 (firstobs=1450 obs=1470);
+run;
+
+/*Check Assumptions for Backward*/
+proc glm data=train plots=all;
+class MSZoning Street Alley LotShape LandContour Utilities LotConfig LandSlope Neighborhood Condition1 Condition2 BldgType HouseStyle RoofStyle RoofMatl Exterior1st Exterior2nd MasVnrType ExterQual ExterCond Foundation BsmtQual BsmtCond BsmtExposure BsmtFinType1 BsmtFinType2 Heating HeatingQC CentralAir Electrical KitchenQual Functional FireplaceQu GarageType GarageFinish GarageQual GarageCond PavedDrive PoolQC Fence MiscFeature SaleType SaleCondition;
+model logSalePrice = LotFrontage logLotArea OverallQual YearBuilt TotalBsmtSF FirstFlrSF GrLivArea TotRmsAbvGrd GarageCars OpenPorchSF / solution;
+run;
+
+/*Check matrix for Backward to determine variables that can be removed*/
+proc sgscatter data=train;
+matrix logSalePrice LotFrontage logLotArea OverallQual YearBuilt TotalBsmtSF FirstFlrSF GrLivArea TotRmsAbvGrd GarageCars OpenPorchSF;
+run;
+
+/*Backward Selection (kaggle = 2.83129)*/
+proc glm data=train2 plots=all;
+model logSalePrice = LotFrontage logLotArea OverallQual YearBuilt TotalBsmtSF FirstFlrSF GrLivArea TotRmsAbvGrd GarageCars OpenPorchSF / ;
+output out = results p=predict;
+run;
+
+proc print data=results (firstobs=1450 obs=1470);
+run;
+
+/*transforming the sales price and changing any negative values*/
+data results2;
+set results;
+if predict > 0 then SalePrice = exp(Predict);
+if predict < 0 then SalePrice = 10000;
+keep id SalePrice;
+where id > 1460;
+run;
+
+
+
+proc export data = results2 outfile = _dataout dbms = csv replace;
+run;
+
+
+
+
+
+
+
+PART II
+
+/*Variables removed OverallCond
+BsmtFinSF2
+BsmtFullBath
+FullBath	
+HalfBath
+Fireplaces
+WoodDeckSF
+EnclosedPorch
+ThirdSsnPorch
+PoolArea
+MiscVal
+MoSold
+YrSold
+GarageYrBlt
+MSSubClass
+YearRemodAdd 
+MasVnrArea
+BsmtFinSF1 
+BsmtUnfSF 
+SecondFlrSF 
+LowQualFinSF 
+BsmtHalfBath 
+BedroomAbvGr 
+KitchenAbvGr 
+GarageArea 
+ScreenPorch */
+
+
+
+/*We need to add a sales column to the test set*/
+data test;
+set test;
+SalePrice = .;
+run;
+
+/*An extra column called VAR1 was added by R. It will be removed later*/
+/*Convert LotFrontage from character to numerical and rename to LotFrontage*/
+/*Dropping VAR1, which was added by R*/
+/*This also combines test and train together*/
+data Train;
+set TrainR;
+LotFrontageNum = input(LotFrontage, 8.);
+drop LotFrontage;
+rename LotFrontageNum=LotFrontage;
+drop VAR1;
+run;
+
+/*Load the data cleaned by R first. TrainR
+/*We want to remove extreme values from the original data set*/
+data train;
+set train;
+if BSMTFinSF1 > 5600 then delete;
+if GrLivArea > 4000 then delete;
+if OpenPorchSF > 300 then delete;
+if TotalBsmtSF > 6000 then delete;
+run;
+
+
+
+/*Check LotFrontage to ensure stored as numeric. Will appear to far right*/
+proc contents data=Train;
+run;
+
+
+/*We want to log certain variables based on assumptions*/
+data train;
+set train;
+logsaleprice = log(saleprice);
+logBSMTFinSF1 = log(BSMTFinSF1);
+logTotalBSMTSF = log(TotalBSMTSF);
+logGrLivArea = log(GrLivArea);
+logLotArea = log(LotArea);
+run;
+
+/*There was a discrepancy in the variable name, so we had to change it*/
+data train;
+set train;
+rename ThreeSsnPorch = ThirdSsnPorch;
+run;
+
+
+/*Set LotFrontage as numeric in test*/
+data test;
+set test;
+LotFrontageNum = input(LotFrontage, 8.);
+drop LotFrontage;
+rename LotFrontageNum=LotFrontage;
+run;
+
+data test;
+set test;
+logsaleprice = log(saleprice);
+logBSMTFinSF1 = log(BSMTFinSF1);
+logTotalBSMTSF = log(TotalBSMTSF);
+logGrLivArea = log(GrLivArea);
+logLotArea = log(LotArea);
+run;
+
+data test;
+set test;
+rename ThreeSsnPorch = ThirdSsnPorch;
+run;
+
+
+data train2;
+set train test;
+run;
+
+proc print data=train2 (firstobs=1450 obs=1470);
+run;
+
+/*Check Assumptions for Backward*/
+proc glm data=train plots=all;
+class MSZoning Street Alley LotShape LandContour Utilities LotConfig LandSlope Neighborhood Condition1 Condition2 BldgType HouseStyle RoofStyle RoofMatl Exterior1st Exterior2nd MasVnrType ExterQual ExterCond Foundation BsmtQual BsmtCond BsmtExposure BsmtFinType1 BsmtFinType2 Heating HeatingQC CentralAir Electrical KitchenQual Functional FireplaceQu GarageType GarageFinish GarageQual GarageCond PavedDrive PoolQC Fence MiscFeature SaleType SaleCondition;
+model logSalePrice = LotFrontage logLotArea OverallQual YearBuilt TotalBsmtSF FirstFlrSF GrLivArea TotRmsAbvGrd GarageCars OpenPorchSF / solution;
+run;
+
+/*Check matrix for Backward to determine variables that can be removed*/
+proc sgscatter data=train;
+matrix logSalePrice LotFrontage logLotArea OverallQual YearBuilt TotalBsmtSF FirstFlrSF GrLivArea TotRmsAbvGrd GarageCars OpenPorchSF;
+run;
+
+/*Backward Selection (kaggle = 2.83129)*/
+proc glm data=train2 plots=all;
+class Neighborhood;
+model logSalePrice = LotFrontage logLotArea OverallQual YearBuilt TotalBsmtSF FirstFlrSF GrLivArea TotRmsAbvGrd GarageCars | Neighborhood / ;
+output out = results p=predict;
+run;
+
+proc print data=results (firstobs=1450 obs=1470);
+run;
+
+/*transforming the sales price and changing any negative values*/
+data results2;
+set results;
+if predict > 0 then SalePrice = exp(Predict);
+if predict < 0 then SalePrice = 10000;
+if logLotArea > 1000 then logLotArea = exp(LogLotArea)
+keep id SalePrice;
+where id > 1460;
+run;
+
+
+
+proc export data = results2 outfile = _dataout dbms = csv replace;
